@@ -76,25 +76,29 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
+       stage('Deploy to Kubernetes') {
+           steps {
+               sh '''
+                 export KUBECONFIG=/var/lib/jenkins/.kube/config
 
-                    kubectl set image \
-                      deployment/nexvion \
-                      nexvion=${IMAGE_NAME}:${BUILD_NUMBER} \
-                      -n nexvion
 
-                    kubectl rollout status \
-                      deployment/nexvion \
-                      -n nexvion \
-                      --timeout=180s
-                '''
-            }
-        }
+                  echo "Checking Kubernetes connection..."
+                  kubectl config current-context
+                  kubectl get nodes
+
+                 echo "Deploying Nexvion..."
+                 kubectl apply -f k8s/namespace.yaml
+                 kubectl apply -f k8s/deployment.yaml
+                 kubectl apply -f k8s/service.yaml
+
+                echo "Checking deployment status..."
+                kubectl get all -n nexvion
+    '''
+}
+
+
+}
+
 
         stage('Verify Deployment') {
             steps {
